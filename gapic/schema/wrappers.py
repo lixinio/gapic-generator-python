@@ -601,9 +601,12 @@ class MessageType:
     @property
     def resource_paths(self) -> Sequence[Tuple[str, str]]:
         patterns = self.options.Extensions[resource_pb2.resource].pattern
+        if not patterns:
+            return []
 
         seq = 0
         patternRes = []
+        haveDefaultAlias = False
         for pattern in patterns:
             seq += 1
             idx = pattern.rfind(':')
@@ -617,11 +620,20 @@ class MessageType:
                 alias = "_" + str(seq)
                 if seq == 1:
                     alias = "" # 第一个为空串, 后面 2,3,4
+                    haveDefaultAlias = True
 
                 patternRes.append((
                     pattern,
                     alias,
                 ))
+
+        if not haveDefaultAlias:
+            # 要补一个缺省的格式, 如果没有
+            # 否则XXX_v1/services/XXXX_service/async_client.py 会报错
+            patternRes.append((
+                patternRes[0][0], # 取第一个
+                "",
+            ))
             
         
         return patternRes
